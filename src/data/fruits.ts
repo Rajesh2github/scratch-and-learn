@@ -22,7 +22,7 @@ export const fruitsQuestions: Question[] = [
     category: 'fruits',
     answer: 'Mango',
     emoji: '🥭',
-    options: ['Mango', 'Pineapple', 'Grapes', 'Papaya'],
+    options: ['Mango', 'Pineapple', 'Grapes', 'Blueberry'],
   },
   {
     id: 'orange',
@@ -36,7 +36,7 @@ export const fruitsQuestions: Question[] = [
     category: 'fruits',
     answer: 'Watermelon',
     emoji: '🍉',
-    options: ['Watermelon', 'Strawberry', 'Mango', 'Papaya'],
+    options: ['Watermelon', 'Strawberry', 'Mango', 'Blueberry'],
   },
   {
     id: 'strawberry',
@@ -57,14 +57,14 @@ export const fruitsQuestions: Question[] = [
     category: 'fruits',
     answer: 'Grapes',
     emoji: '🍇',
-    options: ['Grapes', 'Banana', 'Papaya', 'Mango'],
+    options: ['Grapes', 'Banana', 'Blueberry', 'Mango'],
   },
   {
-    id: 'papaya',
+    id: 'blueberry',
     category: 'fruits',
-    answer: 'Papaya',
-    emoji: '🍈',
-    options: ['Papaya', 'Kiwi', 'Orange', 'Strawberry'],
+    answer: 'Blueberry',
+    emoji: '🫐',
+    options: ['Blueberry', 'Kiwi', 'Orange', 'Strawberry'],
   },
   {
     id: 'kiwi',

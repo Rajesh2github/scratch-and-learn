@@ -17,98 +17,25 @@ import Animated, {
   withTiming,
   withSpring,
 } from 'react-native-reanimated';
-import { SoundManager } from '../src/utils/audio';
+import { categories } from '../../src/data/categories';
+import { CategoryInfo } from '../../src/types/game';
+import { SoundManager } from '../../src/utils/audio';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-interface MiniGameInfo {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  route: string;
-  isComingSoon?: boolean;
-}
-
-const miniGames: MiniGameInfo[] = [
-  {
-    id: 'scratch',
-    name: 'Scratch & Guess',
-    icon: '✋🏼',
-    color: '#FF6B6B',
-    route: '/scratch',
-  },
-  {
-    id: 'abc',
-    name: 'ABC Phonics',
-    icon: '🔤',
-    color: '#4D96FF',
-    route: '/abc-learning',
-  },
-  {
-    id: 'numbers',
-    name: 'Numbers Fun',
-    icon: '🔢',
-    color: '#6BCB77',
-    route: '/numbers',
-  },
-  {
-    id: 'colors',
-    name: 'Colors Fun',
-    icon: '🎨',
-    color: '#FF9F43',
-    route: '/colors',
-  },
-  {
-    id: 'animals',
-    name: 'Animal Sounds',
-    icon: '🐶',
-    color: '#FFD93D',
-    route: '/animal-sounds',
-  },
-  {
-    id: 'find-object',
-    name: 'Find Object',
-    icon: '🔍',
-    color: '#00D2D3',
-    route: '/find-object',
-  },
-  {
-    id: 'memory',
-    name: 'Memory Game',
-    icon: '🧠',
-    color: '#54a0ff',
-    route: '/memory',
-  },
-  {
-    id: 'puzzle',
-    name: 'Picture Puzzle',
-    icon: '🧩',
-    color: '#5f27cd',
-    route: '/puzzle',
-  },
-  {
-    id: 'ride',
-    name: 'Learn & Ride',
-    icon: '🚗',
-    color: '#FF8A3D',
-    route: '/ride',
-  },
-];
-
-const GameCard: React.FC<{ game: MiniGameInfo; onPress: () => void }> = ({
-  game,
+const CategoryCard: React.FC<{ category: CategoryInfo; onPress: () => void }> = ({
+  category,
   onPress,
 }) => {
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
-    if (game.isComingSoon) return;
+    if (category.isComingSoon) return;
     scale.value = withTiming(0.95, { duration: 100 });
   };
 
   const handlePressOut = () => {
-    if (game.isComingSoon) return;
+    if (category.isComingSoon) return;
     scale.value = withSpring(1);
   };
 
@@ -122,22 +49,22 @@ const GameCard: React.FC<{ game: MiniGameInfo; onPress: () => void }> = ({
     <AnimatedPressable
       accessible
       accessibilityRole="button"
-      accessibilityLabel={`${game.name}${game.isComingSoon ? ', Coming Soon' : ''}`}
+      accessibilityLabel={`${category.name}${category.isComingSoon ? ', Coming Soon' : ''}`}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      disabled={game.isComingSoon}
+      disabled={category.isComingSoon}
       style={[
         styles.card,
-        { backgroundColor: game.color },
-        game.isComingSoon && styles.comingSoonCard,
+        { backgroundColor: category.color },
+        category.isComingSoon && styles.comingSoonCard,
         animatedStyle,
       ]}
     >
       <View style={styles.cardContent}>
-        <Text style={styles.cardIcon}>{game.icon}</Text>
-        <Text style={styles.cardName}>{game.name}</Text>
-        {game.isComingSoon && (
+        <Text style={styles.cardIcon}>{category.icon}</Text>
+        <Text style={styles.cardName}>{category.name}</Text>
+        {category.isComingSoon && (
           <View style={styles.comingSoonBadge}>
             <Text style={styles.comingSoonText}>COMING SOON</Text>
           </View>
@@ -179,16 +106,25 @@ export default function HomeScreen() {
     setMuted(nextMute);
   };
 
-  const handleGamePress = (game: MiniGameInfo) => {
-    if (game.isComingSoon) return;
-    router.push(game.route as any);
+  const handleCategoryPress = (category: CategoryInfo) => {
+    if (category.isComingSoon) return;
+    router.push(`/scratch/${category.id}`);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF9F0" />
       <View style={styles.container}>
-        <View style={styles.header}>
+        {/* Header Back Button */}
+        <View style={styles.headerTop}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.replace('/')}
+            accessibilityRole="button"
+            accessibilityLabel="Back to menu"
+          >
+            <Text style={styles.backButtonText}>🏠</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.soundToggle, muted ? styles.soundMuted : styles.soundOn]}
             onPress={toggleSound}
@@ -197,22 +133,25 @@ export default function HomeScreen() {
           >
             <Text style={styles.soundToggleText}>{muted ? '🔇' : '🔊'}</Text>
           </TouchableOpacity>
-          <Text style={styles.emojiTitle}>🎓 🧸 ✨</Text>
-          <Text style={styles.title}>Learn & Play</Text>
-          <Text style={styles.subtitle}>Choose a mini-game to start playing!</Text>
+        </View>
+
+        <View style={styles.header}>
+          <Text style={styles.emojiTitle}>✋🏼 🎨 ✨</Text>
+          <Text style={styles.title}>Scratch & Guess</Text>
+          <Text style={styles.subtitle}>Choose a category to start playing!</Text>
         </View>
 
         <FlatList
-          data={miniGames}
+          data={categories}
           keyExtractor={(item) => item.id}
           numColumns={2}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListFooterComponent={ListFooter}
           renderItem={({ item }) => (
-            <GameCard
-              game={item}
-              onPress={() => handleGamePress(item)}
+            <CategoryCard
+              category={item}
+              onPress={() => handleCategoryPress(item)}
             />
           )}
         />
@@ -231,30 +170,50 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    width: '100%',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  backButtonText: {
+    fontSize: 20,
+  },
   header: {
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 8,
     marginBottom: 24,
-    position: 'relative',
     width: '100%',
   },
   soundToggle: {
-    position: 'absolute',
-    top: 0,
-    right: 8,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-    zIndex: 10,
+    shadowRadius: 3,
+    elevation: 3,
   },
   soundOn: {
     backgroundColor: '#6BCB77',
@@ -263,7 +222,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#A5B1C2',
   },
   soundToggleText: {
-    fontSize: 20,
+    fontSize: 18,
   },
   emojiTitle: {
     fontSize: 40,
@@ -323,8 +282,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
-    textAlign: 'center',
-    paddingHorizontal: 8,
   },
   comingSoonBadge: {
     marginTop: 8,

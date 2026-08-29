@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -51,6 +51,7 @@ export default function GameScreen() {
   const [feedbackText, setFeedbackText] = useState('');
   const feedbackScale = useSharedValue(0);
   const [muted, setMuted] = useState(false);
+  const transitionTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     // Load initial sound settings
@@ -73,6 +74,27 @@ export default function GameScreen() {
     return id.toLowerCase() === query.toLowerCase();
   }
 
+  const getQuestionPrompt = () => {
+    switch (categoryId) {
+      case 'alphabets':
+        return 'What letter is this?';
+      case 'numbers':
+        return 'How many items?';
+      case 'animals':
+        return 'What animal is this?';
+      case 'vegetables':
+        return 'What vegetable is this?';
+      case 'vehicles':
+        return 'What vehicle is this?';
+      case 'colors':
+        return 'What color is this?';
+      case 'shapes':
+        return 'What shape is this?';
+      default:
+        return 'What fruit is this?';
+    }
+  };
+
   // Handle completion navigation
   useEffect(() => {
     if (isComplete) {
@@ -87,9 +109,12 @@ export default function GameScreen() {
     }
   }, [isComplete, score, totalQuestions, categoryId, router]);
 
-  // Clean up sounds on unmount
+  // Clean up sounds and timers on unmount
   useEffect(() => {
     return () => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
       SoundManager.unloadAll();
     };
   }, []);
@@ -107,7 +132,7 @@ export default function GameScreen() {
       SoundManager.playWord(currentQuestion.answer);
 
       // Auto progression after celebration delay
-      setTimeout(() => {
+      transitionTimeoutRef.current = setTimeout(() => {
         feedbackScale.value = withTiming(0, { duration: 200 }, (finished) => {
           if (finished) {
             runOnJS(setFeedbackText)('');
@@ -121,7 +146,7 @@ export default function GameScreen() {
       SoundManager.playWrong();
 
       // Hide negative feedback automatically after a short delay
-      setTimeout(() => {
+      transitionTimeoutRef.current = setTimeout(() => {
         feedbackScale.value = withTiming(0, { duration: 200 }, (finished) => {
           if (finished) {
             runOnJS(setFeedbackText)('');
@@ -161,9 +186,9 @@ export default function GameScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.push('/')}
+          onPress={() => router.replace('/scratch')}
           accessibilityRole="button"
-          accessibilityLabel="Back to home"
+          accessibilityLabel="Back to categories"
         >
           <Text style={styles.backButtonText}>🏠</Text>
         </TouchableOpacity>
@@ -200,7 +225,7 @@ export default function GameScreen() {
       <View style={styles.promptSection}>
         {hasScratchedEnough ? (
           <Animated.View entering={FadeIn} style={styles.questionContainer}>
-            <Text style={styles.questionText}>What fruit is this?</Text>
+            <Text style={styles.questionText}>{getQuestionPrompt()}</Text>
           </Animated.View>
         ) : (
           <View style={styles.instructionContainer}>

@@ -125,7 +125,38 @@ export default function ResultScreen() {
   }, [congratulationInfo.stars, starScales, titleScale]);
 
   const handlePlayAgain = () => {
-    router.replace(`/game/${category || 'fruits'}`);
+    const gameId = category || 'fruits';
+
+    switch (gameId) {
+      case 'memory':
+        router.replace('/memory');
+        break;
+      case 'puzzle':
+        router.replace('/puzzle');
+        break;
+      case 'find-object':
+        router.replace('/find-object');
+        break;
+      case 'animal-sounds':
+        router.replace('/animal-sounds');
+        break;
+      case 'colors':
+        router.replace('/colors');
+        break;
+      case 'numbers':
+        router.replace('/numbers');
+        break;
+      case 'alphabets':
+        router.replace('/abc-learning');
+        break;
+      case 'ride':
+        router.replace('/ride');
+        break;
+      default:
+        // Standard Scratch & Guess categories fallback
+        router.replace(`/scratch/${gameId}`);
+        break;
+    }
   };
 
   const handleHome = () => {

@@ -100,7 +100,7 @@ Start with approximately 10 fruits:
 * Strawberry
 * Pineapple
 * Grapes
-* Papaya
+* Blueberry
 * Kiwi
 
 The architecture must make it easy to add more categories later.
