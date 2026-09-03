@@ -158,10 +158,6 @@ export default function GameScreen() {
 
   const handleScratchComplete = () => {
     setHasScratchedEnough(true);
-    // Play pronunciation of the word when revealed!
-    if (currentQuestion) {
-      SoundManager.playWord(currentQuestion.answer);
-    }
   };
 
   const feedbackAnimatedStyle = useAnimatedStyle(() => {

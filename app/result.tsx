@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, {
@@ -18,6 +19,7 @@ import Animated, {
   withTiming,
   SharedValue,
 } from 'react-native-reanimated';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { SoundManager } from '../src/utils/audio';
 
 interface AnimatedStarProps {
@@ -232,6 +234,16 @@ export default function ResultScreen() {
             <Text style={styles.secondaryButtonText}>Home Screen 🏠</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Full Screen Confetti/Fireworks Celebration */}
+        {numScore >= 4 && (
+          <ConfettiCannon
+            count={numScore === 10 ? 150 : numScore >= 8 ? 100 : 60}
+            origin={{ x: Dimensions.get('window').width / 2, y: -30 }}
+            fallSpeed={2500}
+            fadeOut={true}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
