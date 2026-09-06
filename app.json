@@ -13,6 +13,8 @@
     },
     "android": {
       "package": "com.rajeshtiwari.scratchandlearn",
+      "versionCode": 1,
+      "permissions": [],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

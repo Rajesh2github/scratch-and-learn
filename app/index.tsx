@@ -9,8 +9,11 @@ import {
   Platform,
   StatusBar,
   TouchableOpacity,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -147,12 +150,24 @@ const GameCard: React.FC<{ game: MiniGameInfo; onPress: () => void }> = ({
   );
 };
 
-const ListFooter: React.FC = () => {
+interface ListFooterProps {
+  onPrivacyPress: () => void;
+}
+
+const ListFooter: React.FC<ListFooterProps> = ({ onPrivacyPress }) => {
   return (
     <View style={styles.footer}>
       <Text style={styles.footerText}>
         © {new Date().getFullYear()} Rajesh Tiwari • rajeshtiwari.com
       </Text>
+      <TouchableOpacity
+        onPress={onPrivacyPress}
+        style={styles.privacyButton}
+        accessibilityRole="button"
+        accessibilityLabel="Privacy Policy"
+      >
+        <Text style={styles.privacyText}>🔒 Parents Area: Privacy Policy</Text>
+      </TouchableOpacity>
       <Text style={styles.footerSubText}>
         Designed & Developed with 💖 for Kids Learning
       </Text>
@@ -163,6 +178,13 @@ const ListFooter: React.FC = () => {
 export default function HomeScreen() {
   const router = useRouter();
   const [muted, setMuted] = useState(false);
+
+  // Parental Gate Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [num1, setNum1] = useState(0);
+  const [num2, setNum2] = useState(0);
+  const [userAnswer, setUserAnswer] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // Load initial mute setting
@@ -184,6 +206,31 @@ export default function HomeScreen() {
     router.push(game.route as any);
   };
 
+  // Open Parental Gate with a new math question
+  const handlePrivacyPress = () => {
+    const n1 = Math.floor(Math.random() * 7) + 3; // 3 to 9
+    const n2 = Math.floor(Math.random() * 7) + 3; // 3 to 9
+    setNum1(n1);
+    setNum2(n2);
+    setUserAnswer('');
+    setErrorMessage('');
+    setModalVisible(true);
+  };
+
+  const handleVerify = async () => {
+    const correctAnswer = num1 + num2;
+    if (parseInt(userAnswer.trim(), 10) === correctAnswer) {
+      setModalVisible(false);
+      try {
+        await WebBrowser.openBrowserAsync('https://www.rajeshtiwari.com/privacy-policy/scratch-and-learn');
+      } catch (error) {
+        console.error('Error opening browser:', error);
+      }
+    } else {
+      setErrorMessage('Incorrect answer. Parents, please try again!');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF9F0" />
@@ -197,7 +244,7 @@ export default function HomeScreen() {
           >
             <Text style={styles.soundToggleText}>{muted ? '🔇' : '🔊'}</Text>
           </TouchableOpacity>
-          <Text style={styles.emojiTitle}>🎓 🧸 ✨</Text>
+          <Text style={emojiTitleClass(styles.emojiTitle)}>🎓 🧸 ✨</Text>
           <Text style={styles.title}>Learn & Play</Text>
           <Text style={styles.subtitle}>Choose a mini-game to start playing!</Text>
         </View>
@@ -208,7 +255,7 @@ export default function HomeScreen() {
           numColumns={2}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ListFooterComponent={ListFooter}
+          ListFooterComponent={() => <ListFooter onPrivacyPress={handlePrivacyPress} />}
           renderItem={({ item }) => (
             <GameCard
               game={item}
@@ -217,9 +264,62 @@ export default function HomeScreen() {
           )}
         />
       </View>
+
+      {/* Parental Gate Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Parents Only Area</Text>
+            <Text style={styles.modalSubtitle}>
+              Please solve this simple math problem to view the Privacy Policy.
+            </Text>
+            
+            <Text style={styles.modalQuestion}>
+              {num1} + {num2} = ?
+            </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              keyboardType="number-pad"
+              maxLength={3}
+              value={userAnswer}
+              onChangeText={setUserAnswer}
+              placeholder="Your answer"
+              placeholderTextColor="#94A3B8"
+              autoFocus={true}
+            />
+
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.submitButton]}
+                onPress={handleVerify}
+              >
+                <Text style={styles.modalButtonText}>Verify</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+// Helper to avoid re-declaring types for style items if needed
+const emojiTitleClass = (style: any) => style;
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -361,5 +461,112 @@ const styles = StyleSheet.create({
     color: '#CBD5E1',
     marginTop: 4,
     textAlign: 'center',
+  },
+  privacyButton: {
+    marginVertical: 12,
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+  },
+  privacyText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#64748B',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFF9F0',
+    borderRadius: 32,
+    borderWidth: 6,
+    borderColor: '#4D96FF',
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#7F8C8D',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalQuestion: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#2C3E50',
+    marginBottom: 16,
+  },
+  modalInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: '#CBD5E1',
+    borderRadius: 16,
+    width: '100%',
+    height: 60,
+    fontSize: 24,
+    fontWeight: '900',
+    textAlign: 'center',
+    color: '#2C3E50',
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontWeight: '700',
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 16,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cancelButton: {
+    backgroundColor: '#FF6B6B',
+  },
+  submitButton: {
+    backgroundColor: '#6BCB77',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
   },
 });
