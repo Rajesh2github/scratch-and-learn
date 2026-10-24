@@ -10,8 +10,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 interface ScratchCardProps {
-  emoji: string;
+  emoji?: string;
   image?: any;
+  children?: React.ReactNode;
   onComplete: () => void;
   isComplete: boolean;
 }
@@ -19,33 +20,34 @@ interface ScratchCardProps {
 export const ScratchCard: React.FC<ScratchCardProps> = ({
   emoji,
   image,
+  children,
   onComplete,
   isComplete,
 }) => {
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  // Default to 280x280 card size so canvas renders immediately without waiting for layout event
+  const [dimensions, setDimensions] = useState({ width: 280, height: 280 });
   const [isCoverVisible, setIsCoverVisible] = useState(true);
 
   // Shared values for high-performance UI-thread calculations
   const pathState = useSharedValue(Skia.Path.Make());
-  const cardWidth = useSharedValue(0);
-  const cardHeight = useSharedValue(0);
+  const cardWidth = useSharedValue(280);
+  const cardHeight = useSharedValue(280);
   const grid = useSharedValue<boolean[]>(new Array(64).fill(false));
   const revealPercentage = useSharedValue(0);
   const isCompleteTriggered = useSharedValue(false);
   const canvasOpacity = useSharedValue(1);
 
-  // Sync parent state (e.g. if category/question changes)
+  // Reset cover when item changes (new question)
   useEffect(() => {
-    // Reset canvas path and grid on question changes
     pathState.value = Skia.Path.Make();
     grid.value = new Array(64).fill(false);
     revealPercentage.value = 0;
     isCompleteTriggered.value = false;
     canvasOpacity.value = 1;
     setIsCoverVisible(true);
-  }, [emoji, image, pathState, grid, revealPercentage, isCompleteTriggered, canvasOpacity]);
+  }, [emoji, image, children, pathState, grid, revealPercentage, isCompleteTriggered, canvasOpacity]);
 
-  // When parent tells us it's complete, fade out the cover canvas
+  // When isComplete becomes true, fade out cover. When isComplete becomes false (next question), restore cover!
   useEffect(() => {
     if (isComplete) {
       canvasOpacity.value = withTiming(0, { duration: 300 }, (finished) => {
@@ -53,8 +55,15 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
           runOnJS(setIsCoverVisible)(false);
         }
       });
+    } else {
+      pathState.value = Skia.Path.Make();
+      grid.value = new Array(64).fill(false);
+      revealPercentage.value = 0;
+      isCompleteTriggered.value = false;
+      canvasOpacity.value = 1;
+      setIsCoverVisible(true);
     }
-  }, [isComplete, canvasOpacity]);
+  }, [isComplete, pathState, grid, revealPercentage, isCompleteTriggered, canvasOpacity]);
 
   const handleComplete = () => {
     onComplete();
@@ -62,21 +71,25 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
 
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    setDimensions({ width, height });
-    cardWidth.value = width;
-    cardHeight.value = height;
+    if (width > 0 && height > 0) {
+      setDimensions({ width, height });
+      cardWidth.value = width;
+      cardHeight.value = height;
+    }
   };
 
   // Reanimated gesture for scratching
   const panGesture = Gesture.Pan()
     .enabled(!isComplete)
     .onStart((e) => {
+      'worklet';
       const p = Skia.Path.Make();
       p.addPath(pathState.value);
       p.moveTo(e.x, e.y);
       pathState.value = p;
     })
     .onChange((e) => {
+      'worklet';
       const p = Skia.Path.Make();
       p.addPath(pathState.value);
       p.lineTo(e.x, e.y);
@@ -98,7 +111,6 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
 
           const cellX = c * cellW + cellW / 2;
           const cellY = r * cellH + cellH / 2;
-
           const dx = cellX - e.x;
           const dy = cellY - e.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -130,7 +142,6 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
   const animatedCanvasStyle = useAnimatedStyle(() => {
     return {
       opacity: canvasOpacity.value,
-      // Disable pointer events when fully revealed
       pointerEvents: canvasOpacity.value === 0 ? 'none' : 'auto',
     };
   });
@@ -139,7 +150,9 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
     <View style={styles.container} onLayout={onLayout}>
       {/* 1. Underneath revealed content */}
       <View style={styles.revealedContent}>
-        {image ? (
+        {children ? (
+          children
+        ) : image ? (
           <Animated.Image
             source={image}
             style={styles.revealedImage}

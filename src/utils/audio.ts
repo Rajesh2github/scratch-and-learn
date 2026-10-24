@@ -1,6 +1,6 @@
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeStorage } from '../storage/safeStorage';
 
 const STORAGE_KEY = '@scratch_learn_sound_muted';
 let successSound: Audio.Sound | null = null;
@@ -15,7 +15,7 @@ export class SoundManager {
   static async init() {
     if (isInitialized) return;
     try {
-      const storedMuted = await AsyncStorage.getItem(STORAGE_KEY);
+      const storedMuted = await safeStorage.getItem(STORAGE_KEY);
       if (storedMuted !== null) {
         isMuted = storedMuted === 'true';
       }
@@ -32,7 +32,7 @@ export class SoundManager {
   static async setMuted(muted: boolean) {
     isMuted = muted;
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, muted ? 'true' : 'false');
+      await safeStorage.setItem(STORAGE_KEY, muted ? 'true' : 'false');
       if (muted) {
         await Speech.stop();
       }
@@ -84,13 +84,29 @@ export class SoundManager {
     if (isMuted) return;
 
     try {
+      // Cancel any ongoing speech so phrases don't queue or overlap
+      await Speech.stop();
       await Speech.speak(word, {
         language: 'en',
         pitch: 1.15, // Playful tone
-        rate: 0.85,  // Slow and extremely clear for young learners
+        rate: 0.9,   // Clear and snappy for young learners
       });
     } catch (e) {
       console.warn('Sound playWord error:', e);
+    }
+  }
+
+  static async stop() {
+    try {
+      if (successSound) {
+        await successSound.stopAsync();
+      }
+      if (errorSound) {
+        await errorSound.stopAsync();
+      }
+      await Speech.stop();
+    } catch (e) {
+      console.warn('Sound stop error:', e);
     }
   }
 
